@@ -111,30 +111,17 @@ export default function App() {
 
   const handleAddBot = async (botName: string) => {
     try {
-        if (!botName.trim()) {
-            notifications.show({
-                title: 'Error',
-                message: 'Bot name cannot be empty',
-                color: 'red',
-            });
-            return;
-        }
-        
+      if (!bots.find(b => b.name === botName)) {
         const response = await createBot(botName);
         setBots(response.bots);
-        
-        notifications.show({
-            title: 'Success',
-            message: `Bot ${botName} created successfully`,
-            color: 'green',
-        });
-    } catch (error: any) {
-        console.error('Failed to create bot:', error);
-        notifications.show({
-            title: 'Error',
-            message: error.response?.data?.detail || 'Failed to create bot',
-            color: 'red',
-        });
+      }
+    } catch (error) {
+      console.error('Failed to create bot:', error);
+      notifications.show({
+        title: 'Error',
+        message: 'Failed to create bot',
+        color: 'red',
+      });
     }
   };
 
@@ -273,15 +260,14 @@ export default function App() {
     try {
       await tweetApi.clearTweets();
       
-      // Deactivate all active bots
-      for (const bot of bots) {
-        if (bot.isActive) {
-          await toggleBot(bot.name, false);
-        }
-      }
+      // Update local bot state immediately
+      const updatedBots = bots.map(bot => ({
+        ...bot,
+        isActive: false
+      }));
+      setBots(updatedBots);
       
       await loadTweets();
-      await loadBots();
       setGlobalAuthor('');
       setDebugInfo({
         currentStep: '',
