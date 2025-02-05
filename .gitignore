@@ -4,7 +4,7 @@ node_modules/
 /vendor/
 /.pnp
 .pnp.js
-/package/
+package.json
 package-lock.json
 
 # Build outputs

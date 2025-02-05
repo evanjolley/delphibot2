@@ -1,0 +1,182 @@
+{
+  "tweets": {
+    "1": {
+      "id": "1",
+      "text": "Just launched my new SaaS product! Looking for early feedback from other founders.",
+      "author": "sarahfounder",
+      "timestamp": "2024-03-14 12:00:00+00:00",
+      "parent_id": null,
+      "thread_id": null,
+      "mentions": [],
+      "responses": [],
+      "is_existing": true
+    },
+    "2": {
+      "id": "2",
+      "text": "What's the best way to price a B2B product? Struggling with different tiers.",
+      "author": "startupguy",
+      "timestamp": "2024-03-14 12:30:00+00:00",
+      "parent_id": null,
+      "thread_id": null,
+      "mentions": [],
+      "responses": [
+        "84c7ff06-f149-4dca-8203-a8ad46f56ea9"
+      ],
+      "is_existing": true
+    },
+    "3": {
+      "id": "3",
+      "text": "Hit $1M ARR today! Thread below on how we did it \ud83d\udc47",
+      "author": "growthmaster",
+      "timestamp": "2024-03-14 13:00:00+00:00",
+      "parent_id": null,
+      "thread_id": null,
+      "mentions": [],
+      "responses": [
+        "4",
+        "5",
+        "83a0a8b1-bdeb-4998-9c35-eae009c4842f",
+        "1c5a70dc-c407-46fa-8331-5318cda1a810"
+      ],
+      "is_existing": true
+    },
+    "4": {
+      "id": "4",
+      "text": "1/ First, we focused entirely on customer feedback",
+      "author": "growthmaster",
+      "timestamp": "2024-03-14 13:01:00+00:00",
+      "parent_id": "3",
+      "thread_id": "3",
+      "mentions": [],
+      "responses": [
+        "31b55c91-cf7a-49e9-bf91-8b8788892065",
+        "76cb3369-8963-4831-b0c3-b51367c29018"
+      ],
+      "is_existing": true
+    },
+    "5": {
+      "id": "5",
+      "text": "2/ Then we rebuilt our entire onboarding process",
+      "author": "growthmaster",
+      "timestamp": "2024-03-14 13:02:00+00:00",
+      "parent_id": "4",
+      "thread_id": "3",
+      "mentions": [],
+      "responses": [
+        "28091f64-73f4-4afe-bd63-fba062ab2872",
+        "32760b48-9661-465b-a082-6aebe8f5bab0",
+        "245a02e4-2c9b-475e-8866-c97cfdac01e9",
+        "f96333db-3b51-4f2f-b450-d2237d0435ac"
+      ],
+      "is_existing": true
+    },
+    "3fffc1e8-581d-4e55-a588-b11e76f6832f": {
+      "id": "3fffc1e8-581d-4e55-a588-b11e76f6832f",
+      "text": "who was second pres? @delphibot",
+      "author": "test",
+      "timestamp": "2025-02-05 01:45:25.649994+00:00",
+      "parent_id": null,
+      "thread_id": null,
+      "mentions": [
+        "delphibot"
+      ],
+      "responses": [
+        "19e9a79d-ff5b-4d96-a64b-f024d00e6615"
+      ],
+      "is_existing": false
+    },
+    "19e9a79d-ff5b-4d96-a64b-f024d00e6615": {
+      "id": "19e9a79d-ff5b-4d96-a64b-f024d00e6615",
+      "text": "@test John Adams was the second President of the United States, serving from 1797 to 1801 after George Washington's two terms. He led the young nation through a conflict with France known as the Quasi-War.",
+      "author": "delphibot",
+      "timestamp": "2025-02-05 01:45:28.080673+00:00",
+      "parent_id": "3fffc1e8-581d-4e55-a588-b11e76f6832f",
+      "thread_id": "3fffc1e8-581d-4e55-a588-b11e76f6832f",
+      "mentions": [
+        "test"
+      ],
+      "responses": [],
+      "is_existing": false
+    },
+    "07d361ee-3179-4bab-a99c-93dfca8e38bd": {
+      "id": "07d361ee-3179-4bab-a99c-93dfca8e38bd",
+      "text": "who was second pres?",
+      "author": "test",
+      "timestamp": "2025-02-05 01:47:28.024465+00:00",
+      "parent_id": null,
+      "thread_id": null,
+      "mentions": [],
+      "responses": [],
+      "is_existing": false
+    },
+    "6f1f5933-ee2e-4bac-859c-ab98d4391287": {
+      "id": "6f1f5933-ee2e-4bac-859c-ab98d4391287",
+      "text": "who was second pres? @delphibot",
+      "author": "test",
+      "timestamp": "2025-02-05 01:47:32.208297+00:00",
+      "parent_id": null,
+      "thread_id": null,
+      "mentions": [
+        "delphibot"
+      ],
+      "responses": [
+        "9d10841f-38df-4f6d-a9cf-fe9b8752dde3"
+      ],
+      "is_existing": false
+    },
+    "9d10841f-38df-4f6d-a9cf-fe9b8752dde3": {
+      "id": "9d10841f-38df-4f6d-a9cf-fe9b8752dde3",
+      "text": "@test The second president of the United States was John Adams, who served from 1797 to 1801 after George Washington's two terms in office.",
+      "author": "delphibot",
+      "timestamp": "2025-02-05 01:47:34.747511+00:00",
+      "parent_id": "6f1f5933-ee2e-4bac-859c-ab98d4391287",
+      "thread_id": "6f1f5933-ee2e-4bac-859c-ab98d4391287",
+      "mentions": [
+        "test"
+      ],
+      "responses": [],
+      "is_existing": false
+    },
+    "6afd8bc9-4650-4070-aa7b-d50baf07e885": {
+      "id": "6afd8bc9-4650-4070-aa7b-d50baf07e885",
+      "text": "who was second pres? @delphibot",
+      "author": "asdf",
+      "timestamp": "2025-02-05 01:49:22.001375+00:00",
+      "parent_id": null,
+      "thread_id": null,
+      "mentions": [
+        "delphibot"
+      ],
+      "responses": [],
+      "is_existing": false
+    },
+    "a845c632-a4d0-4359-849c-d3a39f145c64": {
+      "id": "a845c632-a4d0-4359-849c-d3a39f145c64",
+      "text": "who was second pres? @delphibot",
+      "author": "asdf",
+      "timestamp": "2025-02-05 01:49:28.296343+00:00",
+      "parent_id": null,
+      "thread_id": null,
+      "mentions": [
+        "delphibot"
+      ],
+      "responses": [
+        "15ced429-eff4-46d6-a9b7-044d7b66a3a6"
+      ],
+      "is_existing": false
+    },
+    "15ced429-eff4-46d6-a9b7-044d7b66a3a6": {
+      "id": "15ced429-eff4-46d6-a9b7-044d7b66a3a6",
+      "text": "@asdf John Adams was the second President of the United States, serving from 1797 to 1801 after George Washington's two terms in office.",
+      "author": "delphibot",
+      "timestamp": "2025-02-05 01:49:30.561212+00:00",
+      "parent_id": "a845c632-a4d0-4359-849c-d3a39f145c64",
+      "thread_id": "a845c632-a4d0-4359-849c-d3a39f145c64",
+      "mentions": [
+        "asdf"
+      ],
+      "responses": [],
+      "is_existing": false
+    }
+  }
+}
