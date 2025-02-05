@@ -14,17 +14,4 @@ export interface Tweet {
     author: string;
     timestamp: string;
     parent_id?: string;
-    thread_id?: string;
-    mentions: string[];
-    responses: string[];
-}
-
-export interface TweetResponse {
-    status: 'success' | 'error';
-    message?: string;
-    tweets: Tweet[];
-}
-
-export interface ThreadedTweet extends Tweet {
-    children?: ThreadedTweet[];
 }

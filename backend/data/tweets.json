@@ -2,72 +2,34 @@
   "tweets": {
     "1": {
       "id": "1",
-      "text": "Just launched my new SaaS product! Looking for early feedback from other founders.",
-      "author": "sarahfounder",
+      "text": "I've been comparing REST and GraphQL for our new API. Both seem to have their merits but I'm having trouble deciding. Anyone have experience with both?",
+      "author": "techlearner",
       "timestamp": "2024-03-14 12:00:00+00:00",
       "parent_id": null,
-      "thread_id": null,
-      "mentions": [],
-      "responses": [],
       "is_existing": true
     },
     "2": {
       "id": "2",
-      "text": "What's the best way to price a B2B product? Struggling with different tiers.",
-      "author": "startupguy",
-      "timestamp": "2024-03-14 12:30:00+00:00",
-      "parent_id": null,
-      "thread_id": null,
-      "mentions": [],
-      "responses": [
-        "84c7ff06-f149-4dca-8203-a8ad46f56ea9"
-      ],
+      "text": "GraphQL all the way! We switched from REST and it's been amazing. No more over-fetching, perfect for our frontend teams.",
+      "author": "graphqlfan",
+      "timestamp": "2024-03-14 12:05:00+00:00",
+      "parent_id": "1",
       "is_existing": true
     },
     "3": {
       "id": "3",
-      "text": "Hit $1M ARR today! Thread below on how we did it \ud83d\udc47",
-      "author": "growthmaster",
-      "timestamp": "2024-03-14 13:00:00+00:00",
-      "parent_id": null,
-      "thread_id": null,
-      "mentions": [],
-      "responses": [
-        "4",
-        "5",
-        "83a0a8b1-bdeb-4998-9c35-eae009c4842f",
-        "1c5a70dc-c407-46fa-8331-5318cda1a810"
-      ],
+      "text": "Strongly disagree. REST with proper caching is still superior for most apps. GraphQL adds unnecessary complexity unless you have very specific needs.",
+      "author": "apiarchitect",
+      "timestamp": "2024-03-14 12:10:00+00:00",
+      "parent_id": "2",
       "is_existing": true
     },
     "4": {
       "id": "4",
-      "text": "1/ First, we focused entirely on customer feedback",
-      "author": "growthmaster",
-      "timestamp": "2024-03-14 13:01:00+00:00",
-      "parent_id": "3",
-      "thread_id": "3",
-      "mentions": [],
-      "responses": [
-        "31b55c91-cf7a-49e9-bf91-8b8788892065",
-        "76cb3369-8963-4831-b0c3-b51367c29018"
-      ],
-      "is_existing": true
-    },
-    "5": {
-      "id": "5",
-      "text": "2/ Then we rebuilt our entire onboarding process",
-      "author": "growthmaster",
-      "timestamp": "2024-03-14 13:02:00+00:00",
-      "parent_id": "4",
-      "thread_id": "3",
-      "mentions": [],
-      "responses": [
-        "28091f64-73f4-4afe-bd63-fba062ab2872",
-        "32760b48-9661-465b-a082-6aebe8f5bab0",
-        "245a02e4-2c9b-475e-8866-c97cfdac01e9",
-        "f96333db-3b51-4f2f-b450-d2237d0435ac"
-      ],
+      "text": "Ugh, spent 2 hours debugging this React error: 'Cannot read property 'map' of undefined'. Why does this keep happening? \ud83d\ude2b",
+      "author": "reactdev",
+      "timestamp": "2024-03-14 12:30:00+00:00",
+      "parent_id": null,
       "is_existing": true
     }
   }

@@ -38,12 +38,8 @@ class TweetRepository:
     def get_tweet(self, tweet_id: str):
         return self.tweets.get(tweet_id)
     
-    def get_thread(self, thread_id: str):
-        return [t for t in self.tweets.values() if t.thread_id == thread_id]
-    
     def add_tweet(self, text: str, author: str, parent_id: Optional[str] = None):
         tweet_id = str(uuid.uuid4())
-        thread_id = None
         
         # If text is JSON, extract display_text
         try:
@@ -53,30 +49,17 @@ class TweetRepository:
         except json.JSONDecodeError:
             pass  # Use text as is if not JSON
         
-        if parent_id:
-            parent_tweet = self.tweets.get(parent_id)
-            if parent_tweet:
-                thread_id = parent_tweet.thread_id or parent_id
-                parent_tweet.responses.append(tweet_id)
-                self.tweets[parent_id] = parent_tweet
-        
         new_tweet = Tweet(
             id=tweet_id,
             text=text,
             author=author,
             timestamp=datetime.now(timezone.utc),
-            parent_id=parent_id,
-            thread_id=thread_id,
-            mentions=self._extract_mentions(text)
+            parent_id=parent_id
         )
         
         self.tweets[tweet_id] = new_tweet
         self._save_tweets()
         return new_tweet
-    
-    def _extract_mentions(self, text: str) -> List[str]:
-        # Remove any punctuation after the mention
-        return [word[1:].rstrip(',.!?') for word in text.split() if word.startswith('@')]
 
     def get_tweet_chain(self, tweet_id: str):
         """Get the chain of tweets leading up to the given tweet"""

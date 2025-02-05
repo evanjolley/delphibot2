@@ -1,4 +1,4 @@
-import { Container, Stack, Title, Paper, Text, Center, Loader, Group, Button, Grid } from '@mantine/core';
+import { Container, Stack, Paper, Text, Group, Button, Grid, Title, TextInput } from '@mantine/core';
 import { useEffect, useState } from 'react';
 import { notifications } from '@mantine/notifications';
 import '@mantine/notifications/styles.css';
@@ -6,7 +6,7 @@ import TweetForm from './components/TweetForm';
 import TweetDisplay from './components/TweetDisplay';
 import { BotStatus } from './components/BotStatus';
 import { Tweet, TweetInput } from './types';
-import { tweetApi, getBotStatus, toggleBot, processTweet } from './api';
+import { tweetApi, getBotStatus, toggleBot } from './api';
 import React from 'react';
 import { ConfirmationModal } from './components/ConfirmationModal';
 import { DebugView } from './components/DebugView';
@@ -53,6 +53,7 @@ export default function App() {
     final_response: '',
     error: ''
   });
+  const [globalAuthor, setGlobalAuthor] = useState('');
 
   useEffect(() => {
     loadTweets();
@@ -104,21 +105,25 @@ export default function App() {
 
   const handleTweetSubmit = async (input: TweetInput) => {
     try {
-      // Initial state when tweet is submitted
-      setDebugInfo({
-        currentStep: 'started',
-        analysis_prompt: '',
-        analysis_response: '',
-        final_prompt: '',
-        final_response: '',
-        error: ''
-      });
+      const tweetInput = {
+        ...input,
+        author: globalAuthor
+      };
 
-      // Create tweet
-      const response = await tweetApi.createTweet(input);
+      if (botActive && input.text.toLowerCase().includes('@delphibot')) {
+        setDebugInfo({
+          currentStep: 'started',
+          analysis_prompt: '',
+          analysis_response: '',
+          final_prompt: '',
+          final_response: '',
+          error: ''
+        });
+      }
+
+      const response = await tweetApi.createTweet(tweetInput);
       setTweets(prevTweets => [response, ...prevTweets]);
 
-      // Only process bot response if bot is active and tweet mentions bot
       if (botActive && input.text.toLowerCase().includes('@delphibot')) {
         const pollInterval = setInterval(async () => {
           try {
@@ -186,7 +191,6 @@ export default function App() {
     }
   };
 
-  // Completely separate bot monitoring
   useEffect(() => {
     if (!botActive) return;
     
@@ -220,6 +224,15 @@ export default function App() {
     try {
       await tweetApi.clearTweets();
       await loadTweets();
+      setGlobalAuthor('');
+      setDebugInfo({
+        currentStep: botActive ? 'monitoring' : '',
+        analysis_prompt: '',
+        analysis_response: '',
+        final_prompt: '',
+        final_response: '',
+        error: ''
+      });
       notifications.show({
         title: 'Success',
         message: 'Tweets cleared successfully',
@@ -240,21 +253,13 @@ export default function App() {
   const threadedTweets = organizeThreads(tweets);
 
   return (
-    <Container size={showDebug ? "xl" : "sm"} py="xl">
+    <Container size={showDebug ? "xl" : "sm"} py="xl" style={{ position: 'relative' }}>
+      <Title order={1} align="center" mb="xl">Ask @delphibot</Title>
+   
       {showDebug ? (
         <Grid gutter="xl">
           <Grid.Col span={6} style={{ maxWidth: '600px' }}>
             <Stack spacing="xl">
-              <Group position="apart">
-                <Title order={1}>Delphi Tweet Feed</Title>
-                <Button 
-                  variant="subtle"
-                  onClick={() => setShowDebug(!showDebug)}
-                >
-                  Hide Demo
-                </Button>
-              </Group>
-
               <Paper shadow="sm" p="md" withBorder>
                 <Group justify="space-between" align="center">
                   <BotStatus 
@@ -262,20 +267,41 @@ export default function App() {
                     onToggle={handleToggleBot}
                     isLoading={isToggling}
                   />
-                  <Button 
-                    color="red" 
-                    variant="outline"
-                    onClick={() => setModalOpened(true)}
-                  >
-                    Clear Tweets
-                  </Button>
+                  <Group>
+                    <Button 
+                      variant="subtle"
+                      size="xs"
+                      compact
+                      onClick={() => setModalOpened(true)}
+                      color="red"
+                    >
+                      Reset
+                    </Button>
+                    <Button 
+                      variant="subtle"
+                      size="xs"
+                      compact
+                      onClick={() => setShowDebug(!showDebug)}
+                    >
+                      {showDebug ? 'Hide Demo' : 'Full Demo'}
+                    </Button>
+                  </Group>
+
+                  <TextInput
+                    label="Your Name"
+                    placeholder="Enter your name"
+                    value={globalAuthor}
+                    onChange={(e) => setGlobalAuthor(e.target.value)}
+                    required
+                  />
                 </Group>
+                
               </Paper>
 
               <Paper shadow="sm" p="md" withBorder>
                 <TweetForm 
                   onSubmit={handleTweetSubmit}
-                  disabled={false}
+                  disabled={!globalAuthor}
                 />
               </Paper>
 
@@ -313,37 +339,49 @@ export default function App() {
         </Grid>
       ) : (
         <Stack spacing="xl">
-          <Group position="apart">
-            <Title order={1}>Delphi Tweet Feed</Title>
-            <Button 
-              variant="subtle"
-              onClick={() => setShowDebug(!showDebug)}
-            >
-              Full Demo
-            </Button>
-          </Group>
-
           <Paper shadow="sm" p="md" withBorder>
-            <Group justify="space-between" align="center">
-              <BotStatus 
-                isActive={botActive}
-                onToggle={handleToggleBot}
-                isLoading={isToggling}
+            <Stack spacing="md">
+              <Group justify="space-between" align="center">
+                <BotStatus 
+                  isActive={botActive}
+                  onToggle={handleToggleBot}
+                  isLoading={isToggling}
+                />
+                <Group>
+                  <Button 
+                    variant="subtle"
+                    size="xs"
+                    compact
+                    onClick={() => setModalOpened(true)}
+                    color="red"
+                  >
+                    Reset
+                  </Button>
+                  <Button 
+                    variant="subtle"
+                    size="xs"
+                    compact
+                    onClick={() => setShowDebug(!showDebug)}
+                  >
+                    {showDebug ? 'Hide Demo' : 'Full Demo'}
+                  </Button>
+                </Group>
+              </Group>
+              
+              <TextInput
+                label="Your Name"
+                placeholder="Enter your name"
+                value={globalAuthor}
+                onChange={(e) => setGlobalAuthor(e.target.value)}
+                required
               />
-              <Button 
-                color="red" 
-                variant="outline"
-                onClick={() => setModalOpened(true)}
-              >
-                Clear Tweets
-              </Button>
-            </Group>
+            </Stack>
           </Paper>
 
           <Paper shadow="sm" p="md" withBorder>
             <TweetForm 
               onSubmit={handleTweetSubmit}
-              disabled={false}
+              disabled={!globalAuthor}
             />
           </Paper>
 

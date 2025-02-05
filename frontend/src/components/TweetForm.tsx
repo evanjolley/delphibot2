@@ -11,7 +11,6 @@ interface TweetFormProps {
 
 export default function TweetForm({ onSubmit, disabled, parentId }: TweetFormProps) {
   const [text, setText] = useState('');
-  const [author, setAuthor] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -20,7 +19,7 @@ export default function TweetForm({ onSubmit, disabled, parentId }: TweetFormPro
     try {
       await onSubmit({
         text,
-        author,
+        author: '', // This will be overridden by the global author
         parent_id: parentId
       });
       setText('');
@@ -32,14 +31,6 @@ export default function TweetForm({ onSubmit, disabled, parentId }: TweetFormPro
   return (
     <form onSubmit={handleSubmit}>
       <Stack>
-        <TextInput
-          label="Author"
-          placeholder="Your name"
-          value={author}
-          onChange={(e) => setAuthor(e.target.value)}
-          disabled={isSubmitting || disabled}
-          required
-        />
         <Textarea
           label="Tweet"
           placeholder="What's happening?"
@@ -51,7 +42,7 @@ export default function TweetForm({ onSubmit, disabled, parentId }: TweetFormPro
         <Button 
           type="submit" 
           loading={isSubmitting}
-          disabled={isSubmitting || disabled || !text || !author}
+          disabled={isSubmitting || disabled || !text}
         >
           {parentId ? 'Reply' : 'Tweet'}
         </Button>

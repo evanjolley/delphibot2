@@ -22,15 +22,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Add CORS middleware
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["http://localhost:3000"],  # Your frontend URL
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
 class NewTweet(BaseModel):
     text: str
     author: str
@@ -61,14 +52,10 @@ async def get_tweets():
 
 @app.get("/api/tweets/{tweet_id}")
 async def get_tweet(tweet_id: str):
-    """Get a specific tweet and its thread"""
+    """Get a specific tweet"""
     tweet = tweet_repo.get_tweet(tweet_id)
     if not tweet:
         raise HTTPException(status_code=404, detail="Tweet not found")
-    
-    # If this is part of a thread, get the whole thread
-    if tweet.thread_id:
-        return tweet_repo.get_thread(tweet.thread_id)
     return [tweet]
 
 @dataclass

@@ -1,7 +1,6 @@
 from anthropic import Anthropic
 from config import ANTHROPIC_API_KEY
 from typing import List
-import json
 
 class ClaudeService:
     def __init__(self):
@@ -90,44 +89,6 @@ Write your response:"""
         
         except Exception as e:
             raise Exception(f"Failed to generate response: {str(e)}")
-
-    def _construct_prompt(self, tweet_data):
-        author = tweet_data.get('author', '')
-        tweet_text = tweet_data.get('tweet_text', '')
-        
-        # Analyze if this is a direct question or thread response
-        is_thread_response = "above" in tweet_text.lower() or "thread" in tweet_text.lower()
-        
-        # Analyze mentions to detect bot interaction
-        mentions = self._extract_mentions(tweet_text)
-        is_bot_mention = "lennybot" in mentions
-        
-        prompt = f"""Context: You are responding on Twitter to @{author}.
-
-Tweet: {tweet_text}"""
-        
-        if tweet_data.get('thread_context'):
-            thread_analysis = self._analyze_thread_context(
-                tweet_text,
-                tweet_data['thread_context']
-            )
-            
-            prompt += f"""
-
-Thread Analysis:
-{thread_analysis}
-
-Thread Context:
-"""
-            for tweet in tweet_data['thread_context']:
-                prompt += f"- {tweet}\n"
-
-        prompt += f"\nProvide a helpful response that:"
-        prompt += f"\n1. Starts with @{author}"
-        prompt += "\n2. Is informative while being concise"
-        prompt += "\n3. Addresses the specific question or context"
-        
-        return prompt
 
     def _analyze_thread_context(self, trigger_tweet: str, thread_context: List[str]) -> str:
         """Analyze the thread context to understand the conversation flow"""
