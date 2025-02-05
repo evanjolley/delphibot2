@@ -33,5 +33,10 @@ export const tweetApi = {
   
   clearTweets: async (): Promise<void> => {
     await api.delete('/api/tweets/clear');
+  },
+
+  getDebugInfo: async (tweetId: string) => {
+    const response = await api.get(`/api/debug/${tweetId}`);
+    return response.data;
   }
 };

@@ -45,14 +45,19 @@ class TweetRepository:
         tweet_id = str(uuid.uuid4())
         thread_id = None
         
+        # If text is JSON, extract display_text
+        try:
+            parsed = json.loads(text)
+            if isinstance(parsed, dict) and 'display_text' in parsed:
+                text = parsed['display_text']
+        except json.JSONDecodeError:
+            pass  # Use text as is if not JSON
+        
         if parent_id:
             parent_tweet = self.tweets.get(parent_id)
             if parent_tweet:
-                # Use existing thread_id or parent's id as thread_id
                 thread_id = parent_tweet.thread_id or parent_id
-                # Add this tweet to parent's responses
                 parent_tweet.responses.append(tweet_id)
-                # Update parent tweet in storage
                 self.tweets[parent_id] = parent_tweet
         
         new_tweet = Tweet(

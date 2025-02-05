@@ -47,8 +47,10 @@ export default function App() {
   const [showDebug, setShowDebug] = useState(false);
   const [debugInfo, setDebugInfo] = useState({
     currentStep: '',
-    prompt: '',
-    response: '',
+    analysis_prompt: '',
+    analysis_response: '',
+    final_prompt: '',
+    final_response: '',
     error: ''
   });
 
@@ -102,78 +104,70 @@ export default function App() {
 
   const handleTweetSubmit = async (input: TweetInput) => {
     try {
-      setDebugInfo(prev => ({
-        ...prev,
-        currentStep: 'Submitting tweet...',
-        prompt: JSON.stringify(input, null, 2),
-        response: '',
+      // Initial state when tweet is submitted
+      setDebugInfo({
+        currentStep: 'started',
+        analysis_prompt: '',
+        analysis_response: '',
+        final_prompt: '',
+        final_response: '',
         error: ''
-      }));
+      });
 
-      // Create tweet immediately
+      // Create tweet
       const response = await tweetApi.createTweet(input);
       setTweets(prevTweets => [response, ...prevTweets]);
 
       // Only process bot response if bot is active and tweet mentions bot
       if (botActive && input.text.toLowerCase().includes('@delphibot')) {
-        // Start polling for debug info and response
         const pollInterval = setInterval(async () => {
           try {
-            // Get debug info
-            const debugInfo = await api.get(`/api/debug/${response.id}`);
-            const debug = debugInfo.data;
-
+            const debug = await tweetApi.getDebugInfo(response.id);
+            
             switch (debug.step) {
-              case 'analyzing':
+              case 'started':
                 setDebugInfo({
-                  currentStep: 'Analyzing request...',
-                  prompt: debug.analysis_prompt || '',
-                  response: debug.analysis_response || '',
-                  error: debug.error || ''
+                  currentStep: 'started',
+                  analysis_prompt: '',
+                  analysis_response: '',
+                  final_prompt: '',
+                  final_response: '',
+                  error: ''
                 });
                 break;
-              case 'generating':
-                setDebugInfo({
-                  currentStep: 'Generating response...',
-                  prompt: debug.final_prompt || '',
-                  response: debug.final_response || '',
-                  error: debug.error || ''
-                });
-                break;
+
               case 'completed':
                 clearInterval(pollInterval);
-                // Get updated tweets and maintain thread structure
                 const updatedTweets = await tweetApi.getTweets();
                 setTweets(updatedTweets);
-                setDebugInfo(prev => ({
-                  ...prev,
-                  currentStep: 'Response completed',
-                  response: debug.final_response || ''
-                }));
+                setDebugInfo({
+                  currentStep: 'completed',
+                  analysis_prompt: debug.analysis_prompt || '',
+                  analysis_response: debug.analysis_response || '',
+                  final_prompt: debug.final_prompt || '',
+                  final_response: debug.final_response || '',
+                  error: ''
+                });
                 break;
+
               case 'error':
                 clearInterval(pollInterval);
                 setDebugInfo(prev => ({
                   ...prev,
-                  currentStep: 'Error processing response',
-                  error: 'Failed to process bot response'
+                  currentStep: 'error',
+                  error: debug.error || 'Failed to process bot response'
                 }));
                 break;
             }
           } catch (error) {
-            console.error('Error polling debug info:', error);
+            clearInterval(pollInterval);
+            setDebugInfo(prev => ({
+              ...prev,
+              currentStep: 'error',
+              error: 'Failed to get debug information'
+            }));
           }
         }, 1000);
-
-        // Clear interval after 30 seconds
-        setTimeout(() => clearInterval(pollInterval), 30000);
-      } else {
-        setDebugInfo(prev => ({
-          ...prev,
-          currentStep: 'Tweet submitted successfully',
-          prompt: JSON.stringify(input, null, 2),
-          response: ''
-        }));
       }
 
       setError(undefined);
@@ -181,7 +175,7 @@ export default function App() {
       console.error('Failed to submit tweet:', err);
       setDebugInfo(prev => ({
         ...prev,
-        currentStep: 'Error submitting tweet',
+        currentStep: 'error',
         error: err instanceof Error ? err.message : 'Unknown error occurred'
       }));
       notifications.show({
@@ -196,13 +190,14 @@ export default function App() {
   useEffect(() => {
     if (!botActive) return;
     
-    setDebugInfo(prev => ({
-      ...prev,
-      currentStep: 'Bot active - monitoring for new tweets...',
-      prompt: '',
-      response: '',
+    setDebugInfo({
+      currentStep: 'monitoring',
+      analysis_prompt: '',
+      analysis_response: '',
+      final_prompt: '',
+      final_response: '',
       error: ''
-    }));
+    });
     
     const checkInterval = setInterval(async () => {
       await loadTweets();
@@ -212,8 +207,10 @@ export default function App() {
       clearInterval(checkInterval);
       setDebugInfo({
         currentStep: 'Bot inactive',
-        prompt: '',
-        response: '',
+        analysis_prompt: '',
+        analysis_response: '',
+        final_prompt: '',
+        final_response: '',
         error: ''
       });
     };
@@ -304,9 +301,12 @@ export default function App() {
 
           <Grid.Col span={6}>
             <DebugView
+              botActive={botActive}
               currentStep={debugInfo.currentStep}
-              prompt={debugInfo.prompt}
-              response={debugInfo.response}
+              analysis_prompt={debugInfo.analysis_prompt}
+              analysis_response={debugInfo.analysis_response}
+              final_prompt={debugInfo.final_prompt}
+              final_response={debugInfo.final_response}
               error={debugInfo.error}
             />
           </Grid.Col>
