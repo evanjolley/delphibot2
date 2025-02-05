@@ -6,13 +6,18 @@ import TweetForm from './components/TweetForm';
 import TweetDisplay from './components/TweetDisplay';
 import { BotStatus } from './components/BotStatus';
 import { Tweet, TweetInput } from './types';
-import { tweetApi, getBotStatus, toggleBot } from './api';
+import { tweetApi, getBotStatus, toggleBot, createBot } from './api';
 import React from 'react';
 import { ConfirmationModal } from './components/ConfirmationModal';
 import { DebugView } from './components/DebugView';
 
 interface ThreadedTweet extends Tweet {
   children?: ThreadedTweet[];
+}
+
+interface Bot {
+  name: string;
+  isActive: boolean;
 }
 
 const organizeThreads = (tweets: Tweet[]): ThreadedTweet[] => {
@@ -41,7 +46,9 @@ const organizeThreads = (tweets: Tweet[]): ThreadedTweet[] => {
 export default function App() {
   const [tweets, setTweets] = useState<Tweet[]>([]);
   const [error, setError] = useState<string>();
-  const [botActive, setBotActive] = useState(false);
+  const [bots, setBots] = useState<Bot[]>([
+    { name: 'delphibot', isActive: false }
+  ]);
   const [isToggling, setIsToggling] = useState(false);
   const [modalOpened, setModalOpened] = useState(false);
   const [showDebug, setShowDebug] = useState(false);
@@ -63,21 +70,32 @@ export default function App() {
   const checkBotStatus = async () => {
     try {
       const status = await getBotStatus();
-      setBotActive(status.active);
+      setBots(status.bots);
     } catch (error) {
       console.error('Failed to check bot status:', error);
     }
   };
 
-  const handleToggleBot = async () => {
+  const handleToggleBot = async (botName: string) => {
     try {
       setIsToggling(true);
-      await toggleBot(!botActive);
-      setBotActive(!botActive);
+      const targetBot = bots.find(b => b.name === botName);
+      
+      if (!targetBot) {
+        throw new Error('Bot not found');
+      }
+
+      const updatedBots = bots.map(bot => 
+        bot.name === botName ? { ...bot, isActive: !bot.isActive } : bot
+      );
+
+      await toggleBot(botName, !targetBot.isActive);
+      setBots(updatedBots);
+      
       notifications.show({
         title: 'Bot Status Updated',
-        message: !botActive ? 'Bot has been activated' : 'Bot has been deactivated',
-        color: !botActive ? 'green' : 'red',
+        message: `${botName} has been ${!targetBot.isActive ? 'activated' : 'deactivated'}`,
+        color: !targetBot.isActive ? 'green' : 'red',
       });
     } catch (error) {
       console.error('Failed to toggle bot:', error);
@@ -88,6 +106,35 @@ export default function App() {
       });
     } finally {
       setIsToggling(false);
+    }
+  };
+
+  const handleAddBot = async (botName: string) => {
+    try {
+        if (!botName.trim()) {
+            notifications.show({
+                title: 'Error',
+                message: 'Bot name cannot be empty',
+                color: 'red',
+            });
+            return;
+        }
+        
+        const response = await createBot(botName);
+        setBots(response.bots);
+        
+        notifications.show({
+            title: 'Success',
+            message: `Bot ${botName} created successfully`,
+            color: 'green',
+        });
+    } catch (error: any) {
+        console.error('Failed to create bot:', error);
+        notifications.show({
+            title: 'Error',
+            message: error.response?.data?.detail || 'Failed to create bot',
+            color: 'red',
+        });
     }
   };
 
@@ -103,6 +150,20 @@ export default function App() {
     }
   };
 
+  const loadBots = async () => {
+    try {
+      const response = await getBotStatus();
+      setBots(response.bots || []);
+    } catch (error) {
+      console.error('Failed to load bots:', error);
+      notifications.show({
+        title: 'Error',
+        message: 'Failed to load bots',
+        color: 'red',
+      });
+    }
+  };
+
   const handleTweetSubmit = async (input: TweetInput) => {
     try {
       const tweetInput = {
@@ -110,7 +171,11 @@ export default function App() {
         author: globalAuthor
       };
 
-      if (botActive && input.text.toLowerCase().includes('@delphibot')) {
+      const mentioned_bots = bots.filter(b => 
+        input.text.toLowerCase().includes(`@${b.name.toLowerCase()}`)
+      );
+
+      if (bots.some(b => b.isActive) && mentioned_bots.length > 0) {
         setDebugInfo({
           currentStep: 'started',
           analysis_prompt: '',
@@ -124,45 +189,29 @@ export default function App() {
       const response = await tweetApi.createTweet(tweetInput);
       setTweets(prevTweets => [response, ...prevTweets]);
 
-      if (botActive && input.text.toLowerCase().includes('@delphibot')) {
+      if (mentioned_bots.length > 0 && mentioned_bots.some(b => b.isActive)) {
+        let pollCount = 0;
+        const maxPolls = 30; // 30 seconds timeout
+        
         const pollInterval = setInterval(async () => {
           try {
+            pollCount++;
             const debug = await tweetApi.getDebugInfo(response.id);
             
-            switch (debug.step) {
-              case 'started':
-                setDebugInfo({
-                  currentStep: 'started',
-                  analysis_prompt: '',
-                  analysis_response: '',
-                  final_prompt: '',
-                  final_response: '',
-                  error: ''
-                });
-                break;
+            setDebugInfo({
+              currentStep: debug.step,
+              analysis_prompt: debug.analysis_prompt || '',
+              analysis_response: debug.analysis_response || '',
+              final_prompt: debug.final_prompt || '',
+              final_response: debug.final_response || '',
+              error: debug.error || ''
+            });
 
-              case 'completed':
-                clearInterval(pollInterval);
-                const updatedTweets = await tweetApi.getTweets();
-                setTweets(updatedTweets);
-                setDebugInfo({
-                  currentStep: 'completed',
-                  analysis_prompt: debug.analysis_prompt || '',
-                  analysis_response: debug.analysis_response || '',
-                  final_prompt: debug.final_prompt || '',
-                  final_response: debug.final_response || '',
-                  error: ''
-                });
-                break;
-
-              case 'error':
-                clearInterval(pollInterval);
-                setDebugInfo(prev => ({
-                  ...prev,
-                  currentStep: 'error',
-                  error: debug.error || 'Failed to process bot response'
-                }));
-                break;
+            if (debug.step === 'completed' || debug.step === 'error' || pollCount >= maxPolls) {
+              clearInterval(pollInterval);
+              if (debug.step === 'completed') {
+                await loadTweets();
+              }
             }
           } catch (error) {
             clearInterval(pollInterval);
@@ -192,7 +241,7 @@ export default function App() {
   };
 
   useEffect(() => {
-    if (!botActive) return;
+    if (!bots.some(b => b.isActive)) return;
     
     setDebugInfo({
       currentStep: 'monitoring',
@@ -210,7 +259,7 @@ export default function App() {
     return () => {
       clearInterval(checkInterval);
       setDebugInfo({
-        currentStep: 'Bot inactive',
+        currentStep: '',
         analysis_prompt: '',
         analysis_response: '',
         final_prompt: '',
@@ -218,15 +267,24 @@ export default function App() {
         error: ''
       });
     };
-  }, [botActive]);
+  }, [bots.some(b => b.isActive)]);
 
   const handleClearTweets = async () => {
     try {
       await tweetApi.clearTweets();
+      
+      // Deactivate all active bots
+      for (const bot of bots) {
+        if (bot.isActive) {
+          await toggleBot(bot.name, false);
+        }
+      }
+      
       await loadTweets();
+      await loadBots();
       setGlobalAuthor('');
       setDebugInfo({
-        currentStep: botActive ? 'monitoring' : '',
+        currentStep: '',
         analysis_prompt: '',
         analysis_response: '',
         final_prompt: '',
@@ -235,14 +293,14 @@ export default function App() {
       });
       notifications.show({
         title: 'Success',
-        message: 'Tweets cleared successfully',
+        message: 'Tweets and bots cleared successfully',
         color: 'green',
       });
     } catch (error) {
-      console.error('Failed to clear tweets:', error);
+      console.error('Failed to clear tweets and bots:', error);
       notifications.show({
         title: 'Error',
-        message: 'Failed to clear tweets',
+        message: 'Failed to clear tweets and bots',
         color: 'red',
       });
     } finally {
@@ -263,8 +321,9 @@ export default function App() {
               <Paper shadow="sm" p="md" withBorder>
                 <Group justify="space-between" align="center">
                   <BotStatus 
-                    isActive={botActive}
+                    bots={bots}
                     onToggle={handleToggleBot}
+                    onAddBot={handleAddBot}
                     isLoading={isToggling}
                   />
                   <Group>
@@ -327,7 +386,7 @@ export default function App() {
 
           <Grid.Col span={6}>
             <DebugView
-              botActive={botActive}
+              botActive={bots.some(b => b.isActive)}
               currentStep={debugInfo.currentStep}
               analysis_prompt={debugInfo.analysis_prompt}
               analysis_response={debugInfo.analysis_response}
@@ -343,8 +402,9 @@ export default function App() {
             <Stack spacing="md">
               <Group justify="space-between" align="center">
                 <BotStatus 
-                  isActive={botActive}
+                  bots={bots}
                   onToggle={handleToggleBot}
+                  onAddBot={handleAddBot}
                   isLoading={isToggling}
                 />
                 <Group>

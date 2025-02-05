@@ -32,7 +32,7 @@ export default function TweetForm({ onSubmit, disabled, parentId }: TweetFormPro
     <form onSubmit={handleSubmit}>
       <Stack>
         <Textarea
-          label="Tweet"
+          // label="Tweet"
           placeholder="What's happening?"
           value={text}
           onChange={(e) => setText(e.target.value)}

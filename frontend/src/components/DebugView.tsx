@@ -26,7 +26,7 @@ export function DebugView({
                 <Stack spacing="md">
                     <Title order={3}>Behind the Scenes</Title>
                     <Text size="lg" color="dimmed">
-                        Bot is currently inactive. Turn on the bot to see debug information.
+                        No bots are currently active. Activate a bot to see debug information.
                     </Text>
                 </Stack>
             </Paper>
@@ -36,9 +36,13 @@ export function DebugView({
     const getStepDisplay = (step: string) => {
         switch(step) {
             case 'monitoring':
-                return '👀 Bot active, monitoring for new tweets...';
+                return '👀 Bots active, monitoring for mentions...';
             case 'started':
                 return '🤔 Processing tweet...';
+            case 'analyzing_request':
+                return '🔍 Analyzing request...';
+            case 'generating_response':
+                return '✍️ Generating response...';
             case 'completed':
                 return '✅ Response posted successfully';
             case 'error':

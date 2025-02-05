@@ -5,8 +5,12 @@ from typing import List
 class ClaudeService:
     def __init__(self):
         self.client = Anthropic(api_key=ANTHROPIC_API_KEY)
+        self.bot_name = None  # Will be set per request
 
     async def generate_response(self, tweet_data):
+        # Set bot name for this request
+        self.bot_name = tweet_data.get('bot_name', 'delphibot')
+        
         # First, analyze the request and context
         analysis_prompt = self._construct_analysis_prompt(tweet_data)
         request_analysis = await self._get_claude_response(analysis_prompt, is_analysis=True)
@@ -43,18 +47,19 @@ class ClaudeService:
                     prompt += f"{msg}\n\n"
         
         prompt += f"Tweet from @{author}: {tweet_text}\n\n"
-        prompt += "Provide a clear explanation of what the user is requesting."
+        prompt += "Provide a clear, concise explanation of what the user is requesting."
         
         return prompt
 
     def _construct_final_prompt(self, tweet_data, analysis):
         author = tweet_data.get('author', '')
+        bot_name = tweet_data.get('bot_name', 'delphibot')
         
         # If analysis is None or empty, extract the question from tweet_data
         if not analysis or analysis.strip() == 'None':
             analysis = f"User is asking: {tweet_data.get('tweet_text', '')}"
         
-        prompt = f"""Context: You are responding on Twitter to @{author}.
+        prompt = f"""Context: You are @{bot_name} responding on Twitter to @{author}.
 
 Analysis of request: {analysis}
 
@@ -62,6 +67,7 @@ Your task: Provide a helpful response that:
 1. Starts with @{author}
 2. Is informative while being concise (max 280 characters)
 3. Directly addresses the analyzed request
+4. Maintains the persona of @{bot_name}
 
 Write your response:"""
         
@@ -69,10 +75,12 @@ Write your response:"""
 
     async def _get_claude_response(self, prompt, is_analysis=False):
         try:
+            bot_name = "You are an analysis assistant" if is_analysis else f"You are @{self.bot_name}, an AI assistant"
+            
             system_message = (
                 "You are an analysis assistant. Provide clear, direct explanations of what users are asking for." 
                 if is_analysis else 
-                "You are DelphiBot, an AI assistant focused on providing concise, helpful responses on Twitter. Respond directly to the user's question without any JSON formatting."
+                f"You are @{self.bot_name}, an AI assistant focused on providing concise, helpful responses on Twitter. Respond directly to the user's question without any JSON formatting."
             )
             
             response = self.client.messages.create(
