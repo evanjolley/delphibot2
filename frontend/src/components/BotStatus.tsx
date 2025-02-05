@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Switch, Group, Stack, TextInput, Button } from '@mantine/core';
+import { Switch, Group, Stack, TextInput, Button, Text } from '@mantine/core';
 
 interface Bot {
   id: string;
@@ -16,6 +16,7 @@ interface BotStatusProps {
 
 export function BotStatus({ bots, onToggle, onAddBot, isLoading }: BotStatusProps) {
   const [newBotName, setNewBotName] = useState('');
+  const isAtLimit = bots.length >= 3;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,8 +36,13 @@ export function BotStatus({ bots, onToggle, onAddBot, isLoading }: BotStatusProp
             value={newBotName}
             onChange={(e) => setNewBotName(e.target.value)}
             required
+            disabled={isLoading}
           />
-          <Button type="submit" disabled={isLoading}>
+          <Button 
+            type="submit" 
+            disabled={isLoading}
+            title={isAtLimit ? "Maximum limit of 3 bots reached" : ""}
+          >
             Add Bot
           </Button>
         </Group>

@@ -39,9 +39,10 @@ export const createBot = async (botName: string) => {
   try {
     const response = await api.post('/bots', { bot_name: botName });
     return response.data;
-  } catch (error) {
-    console.error('Error creating bot:', error);
-    throw error;
+  } catch (error: any) {
+    const errorMessage = error.response?.data?.detail || 'Error creating bot';
+    console.error('Error creating bot:', errorMessage);
+    throw new Error(errorMessage);
   }
 };
 

@@ -112,6 +112,13 @@ async def create_bot(bot_data: dict):
     try:
         data = _load_bots()
         
+        # Check if we've reached the bot limit
+        if len(data["bots"]) >= 3:
+            raise HTTPException(
+                status_code=400,
+                detail="Maximum limit of 3 bots has been reached"
+            )
+        
         new_bot_name = bot_data["bot_name"].lower()
         if any(bot["name"].lower() == new_bot_name for bot in data["bots"].values()):
             raise HTTPException(

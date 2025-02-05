@@ -111,15 +111,22 @@ export default function App() {
 
   const handleAddBot = async (botName: string) => {
     try {
-      if (!bots.find(b => b.name === botName)) {
-        const response = await createBot(botName);
-        setBots(response.bots);
+      if (bots.find(b => b.name.toLowerCase() === botName.toLowerCase())) {
+        notifications.show({
+          title: 'Error',
+          message: `Bot '@${botName}' already exists`,
+          color: 'red',
+        });
+        return;
       }
-    } catch (error) {
+      
+      const response = await createBot(botName);
+      setBots(response.bots);
+    } catch (error: any) {
       console.error('Failed to create bot:', error);
       notifications.show({
         title: 'Error',
-        message: 'Failed to create bot',
+        message: error.message,
         color: 'red',
       });
     }
@@ -260,11 +267,10 @@ export default function App() {
     try {
       await tweetApi.clearTweets();
       
-      // Update local bot state immediately
-      const updatedBots = bots.map(bot => ({
-        ...bot,
-        isActive: false
-      }));
+      // Update local bot state by keeping only existing bots
+      const updatedBots = bots.filter(bot => 
+        bot.name === 'delphibot' // Keep only the default bot
+      );
       setBots(updatedBots);
       
       await loadTweets();
@@ -298,13 +304,96 @@ export default function App() {
 
   return (
     <Container size={showDebug ? "xl" : "sm"} py="xl" style={{ position: 'relative' }}>
-      <Title order={1} align="center" mb="xl">Ask @delphibot</Title>
-   
-      {showDebug ? (
-        <Grid gutter="xl">
-          <Grid.Col span={6} style={{ maxWidth: '600px' }}>
-            <Stack spacing="xl">
-              <Paper shadow="sm" p="md" withBorder>
+      <Stack spacing="xl">
+        <Group style={{ maxWidth: '600px', width: '100%', margin: '0 auto' }}>
+          <Title order={1} style={{ flex: 1 }}>Ask @delphibot</Title>
+          <Group>
+            <Button 
+              variant="subtle"
+              size="xs"
+              compact
+              onClick={() => setModalOpened(true)}
+              color="red"
+            >
+              Reset
+            </Button>
+            <Button 
+              variant="subtle"
+              size="xs"
+              compact
+              onClick={() => setShowDebug(!showDebug)}
+            >
+              {showDebug ? 'Hide Demo' : 'Full Demo'}
+            </Button>
+          </Group>
+        </Group>
+
+        {showDebug ? (
+          <Grid gutter="xl">
+            <Grid.Col span={6} style={{ maxWidth: '600px' }}>
+              <Stack spacing="xl">
+                <Paper shadow="sm" p="md" withBorder>
+                  <Group justify="space-between" align="center">
+                    <BotStatus 
+                      bots={bots}
+                      onToggle={handleToggleBot}
+                      onAddBot={handleAddBot}
+                      isLoading={isToggling}
+                    />
+                    <TextInput
+                      label="Your Name"
+                      placeholder="Enter your name"
+                      value={globalAuthor}
+                      onChange={(e) => setGlobalAuthor(e.target.value)}
+                      required
+                    />
+                  </Group>
+                  
+                </Paper>
+
+                <Paper shadow="sm" p="md" withBorder>
+                  <TweetForm 
+                    onSubmit={handleTweetSubmit}
+                    disabled={!globalAuthor}
+                  />
+                </Paper>
+
+                <Stack spacing="md">
+                  {error ? (
+                    <Paper shadow="sm" p="md" withBorder>
+                      <Text color="red">{error}</Text>
+                    </Paper>
+                  ) : (
+                    threadedTweets.map(tweet => (
+                      <Paper key={tweet.id} shadow="sm" p="md" withBorder>
+                        <TweetDisplay
+                          tweet={tweet}
+                          onReply={handleTweetSubmit}
+                          isLoading={false}
+                        />
+                      </Paper>
+                    ))
+                  )}
+                </Stack>
+              </Stack>
+            </Grid.Col>
+
+            <Grid.Col span={6}>
+              <DebugView
+                botActive={bots.some(b => b.isActive)}
+                currentStep={debugInfo.currentStep}
+                analysis_prompt={debugInfo.analysis_prompt}
+                analysis_response={debugInfo.analysis_response}
+                final_prompt={debugInfo.final_prompt}
+                final_response={debugInfo.final_response}
+                error={debugInfo.error}
+              />
+            </Grid.Col>
+          </Grid>
+        ) : (
+          <Stack spacing="xl">
+            <Paper shadow="sm" p="md" withBorder>
+              <Stack spacing="md">
                 <Group justify="space-between" align="center">
                   <BotStatus 
                     bots={bots}
@@ -312,26 +401,6 @@ export default function App() {
                     onAddBot={handleAddBot}
                     isLoading={isToggling}
                   />
-                  <Group>
-                    <Button 
-                      variant="subtle"
-                      size="xs"
-                      compact
-                      onClick={() => setModalOpened(true)}
-                      color="red"
-                    >
-                      Reset
-                    </Button>
-                    <Button 
-                      variant="subtle"
-                      size="xs"
-                      compact
-                      onClick={() => setShowDebug(!showDebug)}
-                    >
-                      {showDebug ? 'Hide Demo' : 'Full Demo'}
-                    </Button>
-                  </Group>
-
                   <TextInput
                     label="Your Name"
                     placeholder="Enter your name"
@@ -340,116 +409,36 @@ export default function App() {
                     required
                   />
                 </Group>
-                
-              </Paper>
-
-              <Paper shadow="sm" p="md" withBorder>
-                <TweetForm 
-                  onSubmit={handleTweetSubmit}
-                  disabled={!globalAuthor}
-                />
-              </Paper>
-
-              <Stack spacing="md">
-                {error ? (
-                  <Paper shadow="sm" p="md" withBorder>
-                    <Text color="red">{error}</Text>
-                  </Paper>
-                ) : (
-                  threadedTweets.map(tweet => (
-                    <Paper key={tweet.id} shadow="sm" p="md" withBorder>
-                      <TweetDisplay
-                        tweet={tweet}
-                        onReply={handleTweetSubmit}
-                        isLoading={false}
-                      />
-                    </Paper>
-                  ))
-                )}
               </Stack>
-            </Stack>
-          </Grid.Col>
+            </Paper>
 
-          <Grid.Col span={6}>
-            <DebugView
-              botActive={bots.some(b => b.isActive)}
-              currentStep={debugInfo.currentStep}
-              analysis_prompt={debugInfo.analysis_prompt}
-              analysis_response={debugInfo.analysis_response}
-              final_prompt={debugInfo.final_prompt}
-              final_response={debugInfo.final_response}
-              error={debugInfo.error}
-            />
-          </Grid.Col>
-        </Grid>
-      ) : (
-        <Stack spacing="xl">
-          <Paper shadow="sm" p="md" withBorder>
-            <Stack spacing="md">
-              <Group justify="space-between" align="center">
-                <BotStatus 
-                  bots={bots}
-                  onToggle={handleToggleBot}
-                  onAddBot={handleAddBot}
-                  isLoading={isToggling}
-                />
-                <Group>
-                  <Button 
-                    variant="subtle"
-                    size="xs"
-                    compact
-                    onClick={() => setModalOpened(true)}
-                    color="red"
-                  >
-                    Reset
-                  </Button>
-                  <Button 
-                    variant="subtle"
-                    size="xs"
-                    compact
-                    onClick={() => setShowDebug(!showDebug)}
-                  >
-                    {showDebug ? 'Hide Demo' : 'Full Demo'}
-                  </Button>
-                </Group>
-              </Group>
-              
-              <TextInput
-                label="Your Name"
-                placeholder="Enter your name"
-                value={globalAuthor}
-                onChange={(e) => setGlobalAuthor(e.target.value)}
-                required
+            <Paper shadow="sm" p="md" withBorder>
+              <TweetForm 
+                onSubmit={handleTweetSubmit}
+                disabled={!globalAuthor}
               />
-            </Stack>
-          </Paper>
+            </Paper>
 
-          <Paper shadow="sm" p="md" withBorder>
-            <TweetForm 
-              onSubmit={handleTweetSubmit}
-              disabled={!globalAuthor}
-            />
-          </Paper>
-
-          <Stack spacing="md">
-            {error ? (
-              <Paper shadow="sm" p="md" withBorder>
-                <Text color="red">{error}</Text>
-              </Paper>
-            ) : (
-              threadedTweets.map(tweet => (
-                <Paper key={tweet.id} shadow="sm" p="md" withBorder>
-                  <TweetDisplay
-                    tweet={tweet}
-                    onReply={handleTweetSubmit}
-                    isLoading={false}
-                  />
+            <Stack spacing="md">
+              {error ? (
+                <Paper shadow="sm" p="md" withBorder>
+                  <Text color="red">{error}</Text>
                 </Paper>
-              ))
-            )}
+              ) : (
+                threadedTweets.map(tweet => (
+                  <Paper key={tweet.id} shadow="sm" p="md" withBorder>
+                    <TweetDisplay
+                      tweet={tweet}
+                      onReply={handleTweetSubmit}
+                      isLoading={false}
+                    />
+                  </Paper>
+                ))
+              )}
+            </Stack>
           </Stack>
-        </Stack>
-      )}
+        )}
+      </Stack>
 
       <ConfirmationModal
         opened={modalOpened}
