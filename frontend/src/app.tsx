@@ -10,6 +10,7 @@ import { tweetApi, getBotStatus, toggleBot, createBot } from './api';
 import React from 'react';
 import { ConfirmationModal } from './components/ConfirmationModal';
 import { DebugView } from './components/DebugView';
+import { LoginModal } from './components/LoginModal';
 
 interface ThreadedTweet extends Tweet {
   children?: ThreadedTweet[];
@@ -60,7 +61,8 @@ export default function App() {
     final_response: '',
     error: ''
   });
-  const [globalAuthor, setGlobalAuthor] = useState('');
+  const [username, setUsername] = useState('');
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(true);
 
   useEffect(() => {
     loadTweets();
@@ -91,12 +93,6 @@ export default function App() {
 
       await toggleBot(botName, !targetBot.isActive);
       setBots(updatedBots);
-      
-      notifications.show({
-        title: 'Bot Status Updated',
-        message: `${botName} has been ${!targetBot.isActive ? 'activated' : 'deactivated'}`,
-        color: !targetBot.isActive ? 'green' : 'red',
-      });
     } catch (error) {
       console.error('Failed to toggle bot:', error);
       notifications.show({
@@ -121,7 +117,19 @@ export default function App() {
       }
       
       const response = await createBot(botName);
-      setBots(response.bots);
+      // Create a map of existing bot states
+      const existingBotStates = new Map(
+        bots.map(bot => [bot.name.toLowerCase(), bot.isActive])
+      );
+      
+      // Map the response, preserving existing bot states
+      const updatedBots = response.bots.map(bot => ({
+        name: bot.name,
+        isActive: existingBotStates.has(bot.name.toLowerCase()) 
+          ? existingBotStates.get(bot.name.toLowerCase())! 
+          : bot.active
+      }));
+      setBots(updatedBots);
     } catch (error: any) {
       console.error('Failed to create bot:', error);
       notifications.show({
@@ -162,7 +170,7 @@ export default function App() {
     try {
       const tweetInput = {
         ...input,
-        author: globalAuthor
+        author: username
       };
 
       const mentioned_bots = bots.filter(b => 
@@ -274,7 +282,7 @@ export default function App() {
       setBots(updatedBots);
       
       await loadTweets();
-      setGlobalAuthor('');
+      setUsername('');
       setDebugInfo({
         currentStep: '',
         analysis_prompt: '',
@@ -340,13 +348,6 @@ export default function App() {
                       onAddBot={handleAddBot}
                       isLoading={isToggling}
                     />
-                    <TextInput
-                      label="Your Name"
-                      placeholder="Enter your name"
-                      value={globalAuthor}
-                      onChange={(e) => setGlobalAuthor(e.target.value)}
-                      required
-                    />
                   </Group>
                   
                 </Paper>
@@ -354,7 +355,7 @@ export default function App() {
                 <Paper shadow="sm" p="md" withBorder>
                   <TweetForm 
                     onSubmit={handleTweetSubmit}
-                    disabled={!globalAuthor}
+                    disabled={!username}
                   />
                 </Paper>
 
@@ -401,13 +402,6 @@ export default function App() {
                     onAddBot={handleAddBot}
                     isLoading={isToggling}
                   />
-                  <TextInput
-                    label="Your Name"
-                    placeholder="Enter your name"
-                    value={globalAuthor}
-                    onChange={(e) => setGlobalAuthor(e.target.value)}
-                    required
-                  />
                 </Group>
               </Stack>
             </Paper>
@@ -415,7 +409,7 @@ export default function App() {
             <Paper shadow="sm" p="md" withBorder>
               <TweetForm 
                 onSubmit={handleTweetSubmit}
-                disabled={!globalAuthor}
+                disabled={!username}
               />
             </Paper>
 
@@ -446,6 +440,14 @@ export default function App() {
         onConfirm={handleClearTweets}
         title="Clear Tweets"
         message="Are you sure you want to clear all created tweets? This action cannot be undone."
+      />
+
+      <LoginModal 
+        opened={isLoginModalOpen} 
+        onSubmit={(name) => {
+          setUsername(name);
+          setIsLoginModalOpen(false);
+        }} 
       />
     </Container>
   );

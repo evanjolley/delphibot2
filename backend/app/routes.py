@@ -129,12 +129,15 @@ async def create_bot(bot_data: dict):
         new_bot = {
             "id": str(uuid.uuid4()),
             "name": bot_data["bot_name"],
-            "is_active": False,
+            "is_active": False,  # New bots start as inactive
             "timestamp": datetime.now(timezone.utc).isoformat(),
             "is_existing": False
         }
+        
+        # Add the new bot while preserving existing bots and their states
         data["bots"][new_bot["id"]] = new_bot
         _save_bots(data)
+        
         return {"bots": list(data["bots"].values())}
     except HTTPException:
         raise
