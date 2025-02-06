@@ -7,12 +7,12 @@ class Tweet(BaseModel):
     text: str
     author: str
     timestamp: datetime
-    parent_id: Optional[str] = None
-    is_existing: bool = False
+    parent_id: Optional[str] = None  # ID of parent tweet if this is a reply
+    is_existing: bool = False  # Tracks base tweets
 
 class Bot(BaseModel):
     id: str
     name: str
     is_active: bool
     timestamp: datetime
-    is_existing: bool = False
+    is_existing: bool = False  # yes for DelphiBot
