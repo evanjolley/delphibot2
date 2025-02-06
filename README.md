@@ -8,5 +8,5 @@
    ```
 3. Run the start script:
    - Windows: Double-click `start.bat`
-   - Mac/Linux: Open terminal and run `./start.sh`
+   - Mac/Linux: Open terminal and run `bash start.sh`
 4. Open http://localhost:3000 in your browser
