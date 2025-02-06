@@ -10,6 +10,3 @@
    - Windows: Double-click `start.bat`
    - Mac/Linux: Open terminal and run `./start.sh`
 4. Open http://localhost:3000 in your browser
-
-## Manual Setup (if the start script doesn't work)
-[Previous setup instructions here...]
