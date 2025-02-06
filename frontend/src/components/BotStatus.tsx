@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Switch, Group, Stack, TextInput, Button, Text, Paper, Grid } from '@mantine/core';
+import React, { useState, memo } from 'react';
+import { Switch, Stack, TextInput, Button, Text, Paper, Grid } from '@mantine/core';
 
 interface Bot {
   id: string;
@@ -14,7 +14,7 @@ interface BotStatusProps {
   isLoading?: boolean;
 }
 
-export function BotStatus({ bots, onToggle, onAddBot, isLoading }: BotStatusProps) {
+export const BotStatus = memo(function BotStatus({ bots, onToggle, onAddBot, isLoading }: BotStatusProps) {
   const [newBotName, setNewBotName] = useState('');
   const isAtLimit = bots.length >= 3;
   const emptySlots = 3 - bots.length;
@@ -34,14 +34,15 @@ export function BotStatus({ bots, onToggle, onAddBot, isLoading }: BotStatusProp
       align="stretch" 
       style={{ 
         width: '90%',
-        margin: '0 auto'
+        margin: '0 auto',
+        minHeight: '150px'
       }}
     >
       <Grid.Col 
         span={5} 
         style={{ 
           display: 'flex',
-          alignItems: 'center'  // This centers the content vertically
+          alignItems: 'center'
         }}
       >
         <form onSubmit={handleSubmit} style={{ width: '100%' }}>
@@ -53,10 +54,12 @@ export function BotStatus({ bots, onToggle, onAddBot, isLoading }: BotStatusProp
               onChange={(e) => setNewBotName(e.target.value)}
               required
               disabled={isLoading || isAtLimit}
+              maxLength={15}
+              error={newBotName.length > 15 ? "Bot name must be 15 characters or less" : ""}
             />
             <Button 
               type="submit" 
-              disabled={isLoading || isAtLimit}
+              disabled={isLoading || isAtLimit || !newBotName.trim()}
               title={isAtLimit ? "Maximum limit of 3 bots reached" : ""}
               fullWidth
             >
@@ -67,59 +70,69 @@ export function BotStatus({ bots, onToggle, onAddBot, isLoading }: BotStatusProp
       </Grid.Col>
 
       <Grid.Col span={5}>
-        <Stack spacing="xs">
-          {bots.map((bot) => (
-            <Paper 
-              key={bot.id} 
-              p="xs" 
-              withBorder 
-              style={{ 
-                backgroundColor: 'var(--mantine-color-gray-0)',
-                height: '36px',  // Fixed height
-                display: 'flex',
-                alignItems: 'center' 
-              }}
-            >
-              <Switch
-                label={`@${bot.name}`}
-                checked={bot.isActive}
-                onChange={() => onToggle(bot.name)}
-                disabled={isLoading}
-                size="md"
-                color={bot.isActive ? 'green' : 'red'}
-                styles={{
-                  root: {
-                    display: 'flex',
-                    alignItems: 'center',
-                    height: '24px'  // Fixed height for switch
-                  },
-                  label: {
-                    paddingLeft: '8px',
-                    fontSize: '0.9rem',
-                    lineHeight: '24px'  // Match the switch height
-                  }
+        <Stack spacing="md" style={{ minHeight: '120px' }}>
+          <div style={{ 
+            transition: 'all 0.2s ease-in-out',
+            minHeight: '144px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '18px'
+          }}>
+            {bots.map((bot) => (
+              <Paper 
+                key={bot.id} 
+                p="xs" 
+                withBorder 
+                style={{ 
+                  backgroundColor: 'var(--mantine-color-gray-0)',
+                  height: '36px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  transition: 'all 0.2s ease-in-out'
                 }}
-              />
-            </Paper>
-          ))}
-          {Array.from({ length: emptySlots }).map((_, index) => (
-            <Paper
-              key={`empty-${index}`}
-              p="xs"
-              withBorder
-              style={{
-                backgroundColor: 'var(--mantine-color-gray-0)',
-                height: '36px',  // Match active bot height
-                display: 'flex',
-                alignItems: 'center',
-                opacity: 0.5
-              }}
-            >
-              <Text size="sm" color="dimmed">Empty Bot Slot</Text>
-            </Paper>
-          ))}
+              >
+                <Switch
+                  label={`@${bot.name}`}
+                  checked={bot.isActive}
+                  onChange={() => onToggle(bot.name)}
+                  disabled={isLoading}
+                  size="md"
+                  color={bot.isActive ? 'green' : 'red'}
+                  styles={{
+                    root: {
+                      display: 'flex',
+                      alignItems: 'center',
+                      height: '24px'
+                    },
+                    label: {
+                      paddingLeft: '8px',
+                      fontSize: '0.9rem',
+                      lineHeight: '24px'
+                    }
+                  }}
+                />
+              </Paper>
+            ))}
+            {Array.from({ length: emptySlots }).map((_, index) => (
+              <Paper
+                key={`empty-${index}`}
+                p="xs"
+                withBorder
+                style={{
+                  backgroundColor: 'var(--mantine-color-gray-0)',
+                  height: '36px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  opacity: 0.5,
+                  transition: 'all 0.2s ease-in-out'
+                }}
+              >
+                <Text size="sm" color="dimmed">Bot Slot</Text>
+              </Paper>
+            ))}
+          </div>
         </Stack>
       </Grid.Col>
     </Grid>
   );
-}
+});

@@ -1,5 +1,5 @@
-import { Container, Stack, Paper, Text, Group, Button, Grid, Title, TextInput } from '@mantine/core';
-import { useEffect, useState } from 'react';
+import { Container, Stack, Paper, Text, Group, Button, Grid, Title } from '@mantine/core';
+import { useEffect, useState, useCallback } from 'react';
 import { notifications } from '@mantine/notifications';
 import '@mantine/notifications/styles.css';
 import TweetForm from './components/TweetForm';
@@ -50,7 +50,6 @@ export default function App() {
   const [bots, setBots] = useState<Bot[]>([
     { name: 'delphibot', isActive: false }
   ]);
-  const [isToggling, setIsToggling] = useState(false);
   const [modalOpened, setModalOpened] = useState(false);
   const [showDebug, setShowDebug] = useState(false);
   const [debugInfo, setDebugInfo] = useState({
@@ -62,7 +61,8 @@ export default function App() {
     error: ''
   });
   const [username, setUsername] = useState('');
-  const [isLoginModalOpen, setIsLoginModalOpen] = useState(true);
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(!username);
+  const [tweetText, setTweetText] = useState('');
 
   useEffect(() => {
     loadTweets();
@@ -74,38 +74,40 @@ export default function App() {
       const status = await getBotStatus();
       setBots(status.bots);
     } catch (error) {
-      console.error('Failed to check bot status:', error);
     }
   };
 
-  const handleToggleBot = async (botName: string) => {
+  const handleToggleBot = useCallback(async (botName: string) => {
     try {
-      setIsToggling(true);
       const targetBot = bots.find(b => b.name === botName);
-      
-      if (!targetBot) {
-        throw new Error('Bot not found');
-      }
+      if (!targetBot) return;
 
-      const updatedBots = bots.map(bot => 
-        bot.name === botName ? { ...bot, isActive: !bot.isActive } : bot
-      );
+      // Optimistically update the UI
+      setBots(prevBots => prevBots.map(bot => 
+        bot.name === botName 
+          ? { ...bot, isActive: !bot.isActive } 
+          : bot
+      ));
 
+      // Make API call in background
       await toggleBot(botName, !targetBot.isActive);
-      setBots(updatedBots);
     } catch (error) {
-      console.error('Failed to toggle bot:', error);
+      // Revert on error
+      setBots(prevBots => prevBots.map(bot => 
+        bot.name === botName 
+          ? { ...bot, isActive: targetBot.isActive } 
+          : bot
+      ));
+      
       notifications.show({
         title: 'Error',
         message: 'Failed to toggle bot status',
         color: 'red',
       });
-    } finally {
-      setIsToggling(false);
     }
-  };
+  }, [bots]);
 
-  const handleAddBot = async (botName: string) => {
+  const handleAddBot = useCallback(async (botName: string) => {
     try {
       if (bots.find(b => b.name.toLowerCase() === botName.toLowerCase())) {
         notifications.show({
@@ -131,14 +133,13 @@ export default function App() {
       }));
       setBots(updatedBots);
     } catch (error: any) {
-      console.error('Failed to create bot:', error);
       notifications.show({
         title: 'Error',
         message: error.message,
         color: 'red',
       });
     }
-  };
+  }, [bots]);
 
   const loadTweets = async () => {
     try {
@@ -146,7 +147,6 @@ export default function App() {
       setTweets(response || []);
       setError(undefined);
     } catch (err) {
-      console.error('Failed to load tweets:', err);
       setError('Failed to load tweets');
       setTweets([]);
     }
@@ -157,7 +157,6 @@ export default function App() {
       const response = await getBotStatus();
       setBots(response.bots || []);
     } catch (error) {
-      console.error('Failed to load bots:', error);
       notifications.show({
         title: 'Error',
         message: 'Failed to load bots',
@@ -226,9 +225,9 @@ export default function App() {
         }, 1000);
       }
 
+      setTweetText('');
       setError(undefined);
     } catch (err) {
-      console.error('Failed to submit tweet:', err);
       setDebugInfo(prev => ({
         ...prev,
         currentStep: 'error',
@@ -283,6 +282,7 @@ export default function App() {
       
       await loadTweets();
       setUsername('');
+      setShowDebug(false);
       setDebugInfo({
         currentStep: '',
         analysis_prompt: '',
@@ -291,13 +291,8 @@ export default function App() {
         final_response: '',
         error: ''
       });
-      notifications.show({
-        title: 'Success',
-        message: 'Tweets and bots cleared successfully',
-        color: 'green',
-      });
+      setIsLoginModalOpen(true);
     } catch (error) {
-      console.error('Failed to clear tweets and bots:', error);
       notifications.show({
         title: 'Error',
         message: 'Failed to clear tweets and bots',
@@ -346,7 +341,6 @@ export default function App() {
                       bots={bots}
                       onToggle={handleToggleBot}
                       onAddBot={handleAddBot}
-                      isLoading={isToggling}
                     />
                   </Group>
                   
@@ -356,6 +350,8 @@ export default function App() {
                   <TweetForm 
                     onSubmit={handleTweetSubmit}
                     disabled={!username}
+                    text={tweetText}
+                    setText={setTweetText}
                   />
                 </Paper>
 
@@ -400,7 +396,6 @@ export default function App() {
                     bots={bots}
                     onToggle={handleToggleBot}
                     onAddBot={handleAddBot}
-                    isLoading={isToggling}
                   />
                 </Group>
               </Stack>
@@ -410,6 +405,8 @@ export default function App() {
               <TweetForm 
                 onSubmit={handleTweetSubmit}
                 disabled={!username}
+                text={tweetText}
+                setText={setTweetText}
               />
             </Paper>
 
@@ -439,7 +436,7 @@ export default function App() {
         onClose={() => setModalOpened(false)}
         onConfirm={handleClearTweets}
         title="Clear Tweets"
-        message="Are you sure you want to clear all created tweets? This action cannot be undone."
+        message="Are you sure you want to reset the demo? This action cannot be undone."
       />
 
       <LoginModal 

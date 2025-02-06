@@ -1,9 +1,6 @@
 from pydantic import BaseModel
 from typing import Optional
-from datetime import datetime, timezone
-import json
-import uuid
-from pathlib import Path
+from datetime import datetime
 
 class Tweet(BaseModel):
     id: str

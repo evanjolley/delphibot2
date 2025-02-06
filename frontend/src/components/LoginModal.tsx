@@ -53,6 +53,8 @@ export function LoginModal({ opened, onSubmit }: LoginModalProps) {
             onChange={(e) => setUsername(e.target.value)}
             required
             autoFocus
+            maxLength={15}
+            error={username.length > 15 ? "Username must be 15 characters or less" : ""}
           />
           <Button type="submit" disabled={!username.trim()}>
             Continue

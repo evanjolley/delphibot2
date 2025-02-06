@@ -1,4 +1,4 @@
-import { TextInput, Textarea, Button, Stack } from '@mantine/core';
+import { Textarea, Button, Stack } from '@mantine/core';
 import { useState } from 'react';
 import { TweetInput } from '../types';
 import React from 'react';
@@ -7,10 +7,11 @@ interface TweetFormProps {
   onSubmit: (input: TweetInput) => Promise<void>;
   disabled: boolean;
   parentId?: string;
+  text: string;
+  setText: (text: string) => void;
 }
 
-export default function TweetForm({ onSubmit, disabled, parentId }: TweetFormProps) {
-  const [text, setText] = useState('');
+export default function TweetForm({ onSubmit, disabled, parentId, text, setText }: TweetFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -19,10 +20,9 @@ export default function TweetForm({ onSubmit, disabled, parentId }: TweetFormPro
     try {
       await onSubmit({
         text,
-        author: '', // This will be overridden by the global author
+        author: '',
         parent_id: parentId
       });
-      setText('');
     } finally {
       setIsSubmitting(false);
     }
@@ -32,7 +32,6 @@ export default function TweetForm({ onSubmit, disabled, parentId }: TweetFormPro
     <form onSubmit={handleSubmit}>
       <Stack>
         <Textarea
-          // label="Tweet"
           placeholder="What's happening?"
           value={text}
           onChange={(e) => setText(e.target.value)}

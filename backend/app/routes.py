@@ -12,17 +12,10 @@ import json
 from pathlib import Path
 import uuid
 from datetime import datetime, timezone
-import logging
-
-# Add debug logging
-logging.basicConfig(level=logging.DEBUG)
-logger = logging.getLogger(__name__)
 
 app = FastAPI()
 tweet_repo = TweetRepository()
 claude_service = ClaudeService()
-
-logger.debug(f"Configuring CORS with allowed origins: {ALLOWED_ORIGINS}")
 
 app.add_middleware(
     CORSMiddleware,
@@ -212,7 +205,13 @@ def _extract_mentions(text: str) -> List[str]:
 
 @app.get("/api/debug/{tweet_id}")
 async def get_debug_info(tweet_id: str):
-    if tweet_id not in debug_store:
+    # Get all debug entries for this tweet
+    tweet_debug_entries = {
+        k: v for k, v in debug_store.items() 
+        if k.startswith(f"{tweet_id}_")
+    }
+    
+    if not tweet_debug_entries:
         return {
             "step": "started",
             "analysis_prompt": "",
@@ -221,65 +220,76 @@ async def get_debug_info(tweet_id: str):
             "final_response": "",
             "error": ""
         }
-    return debug_store[tweet_id]
+    
+    # Get the first bot's debug info
+    first_bot_debug = next(iter(tweet_debug_entries.values()))
+    
+    return {
+        "step": first_bot_debug["step"],
+        "analysis_prompt": first_bot_debug.get("analysis_prompt", ""),
+        "analysis_response": first_bot_debug.get("analysis_response", ""),
+        "final_prompt": first_bot_debug.get("final_prompt", ""),
+        "final_response": first_bot_debug.get("final_response", ""),
+        "error": first_bot_debug.get("error", "")
+    }
 
 async def update_debug_info(tweet_id: str, info: dict):
     debug_store[tweet_id] = info
 
 async def process_bot_response(tweet_repo: TweetRepository, claude_service: ClaudeService, new_tweet: Tweet):
     try:
-        # Update debug info - Started
-        await update_debug_info(new_tweet.id, {
-            "step": "analyzing_request",
-            "analysis_prompt": "",
-            "analysis_response": "",
-            "final_prompt": "",
-            "final_response": "",
-            "error": ""
-        })
-
-        # Get thread context
-        context = tweet_repo.get_thread_context(new_tweet.id)
+        # Get all active bots
+        data = _load_bots()
+        active_bots = {
+            bot["name"].lower(): bot
+            for bot in data["bots"].values()
+            if bot["is_active"]
+        }
         
-        # Extract mentioned bot name from the tweet
-        mentioned_bots = [name.lower() for name in _extract_mentions(new_tweet.text)]
-        bot_name = next((name for name in mentioned_bots), 'delphibot')
+        # Extract mentioned bots
+        mentioned_bots = [
+            name.lower() for name in _extract_mentions(new_tweet.text)
+            if name.lower() in active_bots
+        ]
         
-        # Generate response using Claude
-        response_data = await claude_service.generate_response({
-            'tweet_text': new_tweet.text,
-            'author': new_tweet.author,
-            'thread_context': context,
-            'bot_name': bot_name
-        })
-        
-        # Update debug info with analysis
-        await update_debug_info(new_tweet.id, {
-            "step": "generating_response",
-            "analysis_prompt": response_data['analysis']['prompt'],
-            "analysis_response": response_data['analysis']['response'],
-            "final_prompt": "",
-            "final_response": "",
-            "error": ""
-        })
-        
-        # Create response tweet
-        tweet_repo.add_tweet(
-            text=response_data['final']['response'],
-            author=bot_name,
-            parent_id=new_tweet.id
-        )
-        
-        # Update debug info - Completed
-        await update_debug_info(new_tweet.id, {
-            "step": "completed",
-            "analysis_prompt": response_data['analysis']['prompt'],
-            "analysis_response": response_data['analysis']['response'],
-            "final_prompt": response_data['final']['prompt'],
-            "final_response": response_data['final']['response'],
-            "error": ""
-        })
-        
+        # Process response for each mentioned active bot
+        for bot_name in mentioned_bots:
+            # Update debug info for this bot
+            debug_key = f"{new_tweet.id}_{bot_name}"
+            await update_debug_info(debug_key, {
+                "step": "analyzing_request",
+                "analysis_prompt": "",
+                "analysis_response": "",
+                "final_prompt": "",
+                "final_response": "",
+                "error": ""
+            })
+            
+            # Generate response using Claude for this specific bot
+            response_data = await claude_service.generate_response({
+                'tweet_text': new_tweet.text,
+                'author': new_tweet.author,
+                'thread_context': tweet_repo.get_thread_context(new_tweet.id),
+                'bot_name': bot_name
+            })
+            
+            # Create response tweet for this bot
+            tweet_repo.add_tweet(
+                text=response_data['final']['response'],
+                author=bot_name,
+                parent_id=new_tweet.id
+            )
+            
+            # Update debug info for this bot
+            await update_debug_info(debug_key, {
+                "step": "completed",
+                "analysis_prompt": response_data['analysis']['prompt'],
+                "analysis_response": response_data['analysis']['response'],
+                "final_prompt": response_data['final']['prompt'],
+                "final_response": response_data['final']['response'],
+                "error": ""
+            })
+            
     except Exception as e:
         print(f"Error processing bot response: {e}")
         await update_debug_info(new_tweet.id, {

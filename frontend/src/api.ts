@@ -1,5 +1,5 @@
 import axios, { AxiosError } from 'axios';
-import { TweetInput, BotStatus, Tweet } from './types';
+import { TweetInput, Tweet } from './types';
 
 const api = axios.create({
   baseURL: 'http://localhost:8000',
@@ -12,7 +12,6 @@ const api = axios.create({
 api.interceptors.response.use(
   response => response,
   (error: AxiosError) => {
-    console.error('API Error:', error.response?.data || error.message);
     return Promise.reject(error);
   }
 );
@@ -30,7 +29,6 @@ export const toggleBot = async (botName: string, active: boolean) => {
     });
     return response.data;
   } catch (error) {
-    console.error('Error toggling bot:', error);
     throw error;
   }
 };
@@ -41,7 +39,6 @@ export const createBot = async (botName: string) => {
     return response.data;
   } catch (error: any) {
     const errorMessage = error.response?.data?.detail || 'Error creating bot';
-    console.error('Error creating bot:', errorMessage);
     throw new Error(errorMessage);
   }
 };
@@ -62,7 +59,6 @@ export const tweetApi = {
       const response = await api.post('/api/tweets', tweet);
       return response.data.tweet || response.data;
     } catch (error) {
-      console.error('Error creating tweet:', error);
       throw error;
     }
   },

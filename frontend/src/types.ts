@@ -4,8 +4,12 @@ export interface TweetInput {
     parent_id?: string;
 }
 
-export interface BotStatus {
-    active: boolean;
+export interface Bot {
+    id: string;
+    name: string;
+    isActive: boolean;
+    timestamp: string;
+    isExisting?: boolean;
 }
 
 export interface Tweet {
