@@ -16,6 +16,7 @@ interface TweetDisplayProps {
 
 export default function TweetDisplay({ tweet, onReply, isLoading, isChild = false }: TweetDisplayProps) {
   const [replyingToId, setReplyingToId] = useState<string | null>(null);
+  const [replyText, setReplyText] = useState('');
 
   const formatDate = (dateString: string) => {
     try {
@@ -32,6 +33,7 @@ export default function TweetDisplay({ tweet, onReply, isLoading, isChild = fals
   const handleReply = async (input: TweetInput) => {
     await onReply(input);
     setReplyingToId(null);
+    setReplyText('');
   };
 
   const renderTweet = (tweet: ThreadedTweet, isChild: boolean) => (
@@ -73,6 +75,8 @@ export default function TweetDisplay({ tweet, onReply, isLoading, isChild = fals
                 onSubmit={handleReply}
                 disabled={isLoading}
                 parentId={tweet.id}
+                text={replyText}
+                setText={setReplyText}
               />
             </Box>
           )}
